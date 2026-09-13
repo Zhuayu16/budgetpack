@@ -68,7 +68,7 @@ class TestScan(unittest.TestCase):
         self.assertIsNone(readme.text)
         self.assertIsNone(readme.skip_reason)
         self.assertEqual(readme.tokens, readme.size // 4)
-        self.assertEqual(readme.tokens, 7)  # 25 chars + CRLF newlines -> 28 bytes
+        self.assertEqual(readme.tokens, 6)  # 25 bytes with LF-enforced fixtures
         # extension-based binary detection still works without reading
         self.assertEqual(entries["pic.jpg"].skip_reason, "binary file")
 

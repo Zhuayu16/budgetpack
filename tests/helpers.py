@@ -16,6 +16,13 @@ def force_heuristic_tokens() -> None:
     tokens._encoding_checked = True
 
 
+def _write(path: Path, text: str) -> None:
+    # Force LF so file sizes (and token estimates derived from them) are
+    # identical on Windows, Linux and macOS.
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(text)
+
+
 def make_repo(base: Path) -> Path:
     """Create a small fixture repository."""
     root = base / "repo"
@@ -23,15 +30,15 @@ def make_repo(base: Path) -> Path:
     (root / "tests").mkdir()
     (root / "node_modules" / "pkg").mkdir(parents=True)
 
-    (root / "README.md").write_text("# demo repo\n\nhello world\n", encoding="utf-8")
-    (root / "main.py").write_text("print('hi')\n", encoding="utf-8")
-    (root / "src" / "app.py").write_text("def app():\n    return 42\n", encoding="utf-8")
-    (root / "src" / "util.py").write_text("x = 1\n", encoding="utf-8")
-    (root / "tests" / "test_app.py").write_text("assert True\n", encoding="utf-8")
-    (root / "notes.log").write_text("2026-01-01 started\n", encoding="utf-8")
+    _write(root / "README.md", "# demo repo\n\nhello world\n")
+    _write(root / "main.py", "print('hi')\n")
+    _write(root / "src" / "app.py", "def app():\n    return 42\n")
+    _write(root / "src" / "util.py", "x = 1\n")
+    _write(root / "tests" / "test_app.py", "assert True\n")
+    _write(root / "notes.log", "2026-01-01 started\n")
     (root / "node_modules" / "pkg" / "index.js").write_text(
         "module.exports = 1;\n", encoding="utf-8"
     )
     (root / "blob.bin").write_bytes(b"abc\x00def\n")
-    (root / ".gitignore").write_text("*.log\n", encoding="utf-8")
+    _write(root / ".gitignore", "*.log\n")
     return root
