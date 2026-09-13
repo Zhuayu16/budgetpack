@@ -25,14 +25,19 @@ budgetpack pack . --budget 5000 --stdout
 ```
 src/budgetpack/
   gitignore.py    # .gitignore subset parser (also powers --include/--exclude)
-  scanner.py      # filesystem walk, binary detection, git heat
+  scanner.py      # scandir walk, ignore rules, binary detection, git heat
   prioritize.py   # importance scoring
-  packer.py       # greedy budget packing + truncation
+  packer.py       # greedy budget packing, truncation, lazy materialize
   render.py       # markdown report and stats table
   tokens.py       # token counting (tiktoken optional, chars/4 fallback)
   cli.py          # argparse CLI
 tests/            # stdlib unittest, deterministic (heuristic backend pinned)
+benchmarks/       # reproducible A/B benchmark + README chart generation
 ```
+
+Benchmarks live in `benchmarks/`: `bench_pack.py` times eager vs lazy
+pipelines on real checkouts and verifies the budget under tiktoken;
+`make_charts.py` regenerates `assets/*.png` from the recorded results.
 
 ## Ground rules
 

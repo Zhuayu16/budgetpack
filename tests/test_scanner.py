@@ -62,6 +62,16 @@ class TestScan(unittest.TestCase):
         self.assertNotIn("tests/test_app.py", rels)
         self.assertIn("src/app.py", rels)
 
+    def test_lazy_scan_reads_no_content(self):
+        entries = {e.relpath: e for e in scan(self.root, read_texts=False)}
+        readme = entries["README.md"]
+        self.assertIsNone(readme.text)
+        self.assertIsNone(readme.skip_reason)
+        self.assertEqual(readme.tokens, readme.size // 4)
+        self.assertEqual(readme.tokens, 7)  # 25 chars + CRLF newlines -> 28 bytes
+        # extension-based binary detection still works without reading
+        self.assertEqual(entries["pic.jpg"].skip_reason, "binary file")
+
     def test_output_file_never_included(self):
         (self.root / "budgetpack-output.md").write_text("stale", encoding="utf-8")
         self.assertNotIn("budgetpack-output.md", self.rels(extra_excludes=["budgetpack-output.md"]))

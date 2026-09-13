@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "budgetpack"
-version = "0.1.0"
+version = "0.2.0"
 description = "Pack any repository into an LLM-ready prompt under a strict token budget."
 readme = "README.md"
 requires-python = ">=3.9"

@@ -1,0 +1,38 @@
+{
+  "requests": {
+    "ms_best": 325.1,
+    "files_found": 128,
+    "files_packed": 26,
+    "files_omitted": 102,
+    "bytes_read": 1566591,
+    "text_bytes_total": 1566591,
+    "used": 31998
+  },
+  "click": {
+    "ms_best": 219.1,
+    "files_found": 174,
+    "files_packed": 43,
+    "files_omitted": 131,
+    "bytes_read": 1324905,
+    "text_bytes_total": 1324905,
+    "used": 32000
+  },
+  "fastapi": {
+    "ms_best": 2941.5,
+    "files_found": 3137,
+    "files_packed": 230,
+    "files_omitted": 2907,
+    "bytes_read": 22360344,
+    "text_bytes_total": 22360344,
+    "used": 31998
+  },
+  "django": {
+    "ms_best": 6491.3,
+    "files_found": 7082,
+    "files_packed": 673,
+    "files_omitted": 6409,
+    "bytes_read": 46049105,
+    "text_bytes_total": 46049105,
+    "used": 32000
+  }
+}

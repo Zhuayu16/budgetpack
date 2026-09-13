@@ -50,8 +50,18 @@ def scan(
     respect_gitignore: bool = True,
     use_default_excludes: bool = True,
     max_file_size: int = DEFAULT_MAX_FILE_SIZE,
+    read_texts: bool = True,
 ) -> list[FileEntry]:
-    """Walk *root* and return readable text files as :class:`FileEntry` items."""
+    """Walk *root* and return files as :class:`FileEntry` items.
+
+    With ``read_texts=True`` (default) every readable text file's content is
+    loaded and token-counted exactly. With ``read_texts=False`` the scan only
+    collects metadata: ``text`` stays ``None`` and ``tokens`` is estimated from
+    the file size (``size // 4``). Metadata mode pairs with
+    :func:`budgetpack.packer.materialize`, which reads just the files that end
+    up packed - on large repositories this avoids decoding thousands of files
+    that would be omitted anyway.
+    """
     exclude_pats = [p for line in extra_excludes if (p := compile_ignore_line(line))]
     include_pats = [p for line in extra_includes if (p := compile_ignore_line(line))]
 
@@ -71,46 +81,57 @@ def scan(
                 stack.push("", root_gitignore.read_text(encoding="utf-8", errors="replace"))
 
     entries: list[FileEntry] = []
-    for dirpath, dirnames, filenames in os.walk(root):
-        dirpath = Path(dirpath)
-        rel_dir = dirpath.relative_to(root).as_posix()
-        if rel_dir != "." and stack.ignored(rel_dir, True):
-            dirnames[:] = []
-            continue
 
+    def visit(dirpath: Path, rel_dir: str) -> None:
         gitignore = dirpath / ".gitignore"
         if respect_gitignore and gitignore.is_file():
             with contextlib.suppress(OSError):
                 stack.push(rel_dir, gitignore.read_text(encoding="utf-8", errors="replace"))
-
-        kept_dirs = []
-        for d in sorted(dirnames):
-            rel = f"{rel_dir}/{d}" if rel_dir != "." else d
-            if d == ".git" or stack.ignored(rel, True) or cli_excluded(rel, True):
+        try:
+            with os.scandir(dirpath) as it:
+                children = sorted(it, key=lambda e: e.name)
+        except OSError:
+            return
+        for entry in children:
+            name = entry.name
+            if name == ".gitignore":
                 continue
-            kept_dirs.append(d)
-        dirnames[:] = kept_dirs
-
-        for name in sorted(filenames):
-            rel = f"{rel_dir}/{name}" if rel_dir != "." else name
-            if name == ".gitignore" or stack.ignored(rel, False) or cli_excluded(rel, False):
+            rel = f"{rel_dir}/{name}" if rel_dir else name
+            try:
+                if entry.is_symlink():
+                    continue
+                is_dir = entry.is_dir(follow_symlinks=False)
+            except OSError:
                 continue
-            if not cli_included(rel):
-                continue
-            entry = _make_entry(root, rel, max_file_size)
-            if entry is not None:
-                entries.append(entry)
+            if is_dir:
+                if name == ".git" or stack.ignored(rel, True) or cli_excluded(rel, True):
+                    continue
+                visit(dirpath / name, rel)
+            elif (
+                not stack.ignored(rel, False)
+                and not cli_excluded(rel, False)
+                and cli_included(rel)
+            ):
+                made = _make_entry(root, rel, max_file_size, read_texts, entry)
+                if made is not None:
+                    entries.append(made)
 
+    visit(root, "")
     entries.sort(key=lambda e: e.relpath)
     return entries
 
 
-def _make_entry(root: Path, rel: str, max_file_size: int) -> FileEntry | None:
-    abspath = root / rel
+def _make_entry(
+    root: Path, rel: str, max_file_size: int, read_texts: bool, direntry=None
+) -> FileEntry | None:
     try:
-        size = abspath.stat().st_size
+        if direntry is not None:
+            size = direntry.stat(follow_symlinks=False).st_size
+        else:
+            size = (root / rel).stat().st_size
     except OSError:
         return None
+    abspath = root / rel
     ext = os.path.splitext(rel)[1].lower()
     if ext in BINARY_EXTENSIONS:
         return FileEntry(rel, abspath, size, None, 0, skip_reason="binary file")
@@ -120,6 +141,10 @@ def _make_entry(root: Path, rel: str, max_file_size: int) -> FileEntry | None:
             rel, abspath, size, None, size // 4,
             skip_reason=f"too large (> {mb:g} MB limit)",
         )
+    if not read_texts:
+        # Metadata only: estimate from size; the content is read later by
+        # materialize() if (and only if) the file makes the cut.
+        return FileEntry(rel, abspath, size, None, size // 4)
     try:
         text = abspath.read_text(encoding="utf-8", errors="replace")
     except OSError:

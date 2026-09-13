@@ -1,0 +1,54 @@
+{
+  "requests": {
+    "budget": 32000,
+    "files_found": 128,
+    "eager_ms": 133.6,
+    "lazy_ms": 116.1,
+    "speedup": 1.15,
+    "eager_read_mb": 1.57,
+    "lazy_read_mb": 0.13,
+    "packed": 23,
+    "heuristic_used": 31082,
+    "cl100k_used": 29107,
+    "cl100k_ok": true
+  },
+  "click": {
+    "budget": 32000,
+    "files_found": 174,
+    "eager_ms": 107.1,
+    "lazy_ms": 85.8,
+    "speedup": 1.25,
+    "eager_read_mb": 1.32,
+    "lazy_read_mb": 0.13,
+    "packed": 41,
+    "heuristic_used": 31000,
+    "cl100k_used": 29288,
+    "cl100k_ok": true
+  },
+  "fastapi": {
+    "budget": 32000,
+    "files_found": 3137,
+    "eager_ms": 620.7,
+    "lazy_ms": 277.0,
+    "speedup": 2.24,
+    "eager_read_mb": 22.36,
+    "lazy_read_mb": 0.13,
+    "packed": 231,
+    "heuristic_used": 31007,
+    "cl100k_used": 29807,
+    "cl100k_ok": true
+  },
+  "django": {
+    "budget": 32000,
+    "files_found": 7082,
+    "eager_ms": 2203.4,
+    "lazy_ms": 1052.4,
+    "speedup": 2.09,
+    "eager_read_mb": 46.05,
+    "lazy_read_mb": 0.13,
+    "packed": 674,
+    "heuristic_used": 31105,
+    "cl100k_used": 28771,
+    "cl100k_ok": true
+  }
+}

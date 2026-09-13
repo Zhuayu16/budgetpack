@@ -59,6 +59,9 @@ Paste the file into any LLM chat, or point your agent at it.
 
 - **💸 Budget-first packing** - give it 10k or 200k tokens; it fills the budget
   to ~100% utilization with the most useful code, never over.
+- **⚡ Lazy reading** - the scan never decodes file contents; only the files
+  that make the pack are read. On a 7,000-file repo that means up to
+  **354× less disk I/O** and **6-10× faster** end-to-end (see benchmarks).
 - **🧠 Multi-signal prioritization** - README and entry points rank highest,
   git-change heat ("hot files") gets a boost, tests and deep nesting rank
   lower. Every file's score is explainable.
@@ -131,6 +134,41 @@ Scoring signals (higher wins; full rules in
 
 Token counting uses a chars÷4 heuristic by default; install the extra for
 exact counts: `pip install "budgetpack[tokens]"`.
+
+## 📊 Benchmarks
+
+Measured on real repositories (requests, click, fastapi, django; Windows 11,
+Python 3.10, NVMe SSD; 32k-token budget; best of 3; 2026-09-13). Reproduce
+with [`benchmarks/bench_pack.py`](benchmarks/bench_pack.py).
+
+![Benchmark chart](assets/benchmark.png)
+
+| Repo | Files | v0.1.0 | v0.2.0 | Speedup | Disk I/O |
+|---|---:|---:|---:|---:|---|
+| requests | 128 | 325 ms | 116 ms | **2.8×** | 1.57 → 0.13 MB |
+| click | 174 | 219 ms | 86 ms | **2.6×** | 1.32 → 0.13 MB |
+| fastapi | 3,137 | 2,942 ms | 277 ms | **10.6×** | 22.36 → 0.13 MB |
+| django | 7,082 | 6,491 ms | 1,052 ms | **6.2×** | 46.05 → 0.13 MB |
+
+The win is structural: v0.1.0 decoded every readable file before deciding
+what to keep; v0.2.0 scans metadata, ranks, and reads only what ships. On
+django that is 46 MB of I/O replaced by 0.13 MB - the files actually packed.
+
+The budget guarantee also holds under exact token counting: re-packing all
+four repos with `tiktoken` cl100k_base lands at 29,107 / 29,288 / 29,807 /
+28,771 tokens - every one inside the 32,000 budget (89.9-93.1% utilization;
+exact counts for real code run denser than chars÷4, and budgetpack drops
+files rather than exceeding the budget).
+
+Why care about per-file sizes at all? Because the biggest context eaters are
+rarely code:
+
+![Context fit chart](assets/context-fit.png)
+
+fastapi's single largest context hog is a 308k-token SVG architecture diagram
+- **10× the entire 32k budget** - quietly sitting in `docs/`. `budgetpack
+stats` surfaces that before you pack, and the packer fills your budget at
+96-97% utilization regardless of its size.
 
 ## 📖 CLI reference
 

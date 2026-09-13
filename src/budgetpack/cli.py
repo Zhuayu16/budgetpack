@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from . import __version__
-from .packer import pack
+from .packer import materialize, pack
 from .prioritize import score_file, score_files
 from .render import render_markdown, render_stats
 from .scanner import git_change_counts, scan
@@ -80,6 +80,8 @@ def main(argv: list[str] | None = None) -> int:
 
 def _cmd_pack(args: argparse.Namespace, root: Path) -> int:
     output_name = (args.output or Path(OUTPUT_NAME)).name
+    # Metadata-only scan: file contents are read later, and only for the
+    # files that actually make it into the pack.
     entries = scan(
         root,
         extra_excludes=[*args.exclude, output_name, OUTPUT_NAME],
@@ -87,6 +89,7 @@ def _cmd_pack(args: argparse.Namespace, root: Path) -> int:
         respect_gitignore=not args.no_gitignore,
         use_default_excludes=not args.no_default_excludes,
         max_file_size=int(args.max_file_size * 1_000_000),
+        read_texts=False,
     )
     if not entries:
         print("budgetpack: no readable files found", file=sys.stderr)
@@ -94,7 +97,8 @@ def _cmd_pack(args: argparse.Namespace, root: Path) -> int:
 
     change_counts = git_change_counts(root)
     scored = score_files(entries, change_counts)
-    result = pack(scored, args.budget)
+    plan = pack(scored, args.budget)
+    result, reads = materialize(plan, root, args.budget)
     report = render_markdown(result, root)
 
     if args.stdout:
@@ -110,6 +114,10 @@ def _cmd_pack(args: argparse.Namespace, root: Path) -> int:
     print(
         f"Packed {len(result.packed)} files "
         f"({result.used:,} / {result.budget:,} tokens{rel_note}) -> {output}"
+    )
+    print(
+        f"Read {reads.files_read} of {len(entries)} files "
+        f"({reads.bytes_read / 1_000_000:.1f} MB) - the rest was skipped by budget"
     )
     if result.omitted:
         print(f"{len(result.omitted)} files omitted - see the report's 'Omitted files' table.")
