@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "budgetpack"
+version = "0.1.0"
+description = "Pack any repository into an LLM-ready prompt under a strict token budget."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "budgetpack contributors" }]
+keywords = [
+  "llm",
+  "prompt",
+  "tokens",
+  "token-budget",
+  "cli",
+  "codebase",
+  "context",
+  "ai",
+  "chatgpt",
+  "claude",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development",
+  "Topic :: Text Processing :: Markup :: Markdown",
+]
+
+[project.urls]
+Homepage = "https://github.com/Zhuayu16/budgetpack"
+Issues = "https://github.com/Zhuayu16/budgetpack/issues"
+Changelog = "https://github.com/Zhuayu16/budgetpack/blob/main/CHANGELOG.md"
+
+[project.scripts]
+budgetpack = "budgetpack.cli:run"
+
+[project.optional-dependencies]
+# Optional exact token counting; everything works without it (heuristic fallback).
+tokens = ["tiktoken>=0.5"]
+dev = ["ruff>=0.4"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
